@@ -6,7 +6,9 @@ class Advisor
 {
 	protected $reviews = [];
 	protected $name;
-	
+	protected $calculators = [];
+	protected $score = 100;
+
     public function __construct($name)
     {
         $this->name = $name;
@@ -33,11 +35,26 @@ class Advisor
         		return ($a->getDate() < $b->getDate()) ? -1 : 1;
         	}
         });
+
+        $this->calculateScore();
     }
     
     public function getScore()
     {
-    	$score = 100;
-    	return $score;
+    	return $this->score;
+    }
+
+    public function addCalculator(Calculator $calculator)
+    {
+        $this->calculators[] = $calculator;
+    }
+    
+    private function calculateScore()
+    {
+    	$score = $this->score;
+    	foreach($this->calculators as $calculator) {
+    		$score += $calculator->getModifier($this->reviews);
+    	}
+    	$this->score = $score;
     }
 }
