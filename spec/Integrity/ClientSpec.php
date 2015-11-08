@@ -7,8 +7,70 @@ use Prophecy\Argument;
 
 class ClientSpec extends ObjectBehavior
 {
+	protected $advisor1;
+	protected $advisor2;
+	protected $calculator1;
+	protected $calculator2;
+	protected $stream;
+	
+	function let($advisor1, $advisor2, $calculator1, $calculator2, $stream)
+	{
+		$advisor1->beADoubleOf('Integrity\Advisor');
+		$advisor1->beConstructedWith(['Advisor1']);
+		$advisor2->beADoubleOf('Integrity\Advisor');
+		$advisor2->beConstructedWith(['Advisor2']);
+		 
+		$calculator1->beADoubleOf('Integrity\CalculatorInterface');
+		$calculator2->beADoubleOf('Integrity\CalculatorInterface');
+		 
+		$stream->beADoubleOf('Integrity\StreamInterface');
+		$this->beConstructedWith([$advisor1, $advisor2], [$calculator1, $calculator2], $stream);
+		
+		$advisor1->addCalculator($calculator1)->willReturn();
+		$advisor1->addCalculator($calculator2)->willReturn();
+		$advisor1->addReview(Argument::any())->willReturn(100);
+		$advisor1->getScore(Argument::any())->willReturn(100);
+		
+		$advisor2->addCalculator($calculator1)->willReturn();
+		$advisor2->addCalculator($calculator2)->willReturn();
+		
+		
+		$this->advisor1 = $advisor1;
+		$this->advisor2 = $advisor2;
+		$this->calculator1 = $calculator1;
+		$this->calculator2 = $calculator2;
+		$this->stream = $stream;
+	}
     function it_is_initializable()
     {
-        $this->shouldHaveType('Integrity\Client');
+    	$this->shouldHaveType('Integrity\Client');
+    }
+    
+    function it_returns_correct_score()
+    {
+    	$this->advisor1->getName()->willReturn('Advisor1');
+    	$this->advisor2->getName()->willReturn('Advisor2');
+    	$this->stream->sendData(Argument::type('string'))->willReturn("Start");
+    	$this->stream->sendData(Argument::type('int'))->willReturn(100);
+    	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50,**');
+    	$this->stream->sendData("\n")->will(function($stream) {
+    		$this->readData()->willReturn('quit');
+    	});
+    	$this->run();
+    	$this->stream->sendData(100)->shouldHaveBeenCalled();
+    }
+    
+    function it_should_throw_exceptions_on_wrong_data()
+    {
+    	$this->advisor1->getName()->willReturn('Advisor1');
+    	$this->advisor2->getName()->willReturn('Advisor2');
+    	$this->stream->sendData(Argument::type('string'))->willReturn("Start");
+    	$this->stream->sendData(Argument::type('int'))->willReturn(100);
+    	$this->stream->readData()->willReturn('wrongDate, Advisor1,solicited, DEV1,50,**');
+    	$this->stream->sendData("\n")->will(function($stream) {
+    		$this->readData()->willReturn('quit');
+    	});
+    	$this->run();
+    	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
     }
 }

@@ -48,7 +48,7 @@ class Advisor
     	}
     	$this->score = $score < $this::MAX_SCORE ? $score : $this::MAX_SCORE;
     	
-    	if ($this->score < 50) {
+    	if ($this->score < 50) {print("Score: " . $this->score);
     		throw new ExtraLowScore($this->getName());
     	} else if ($this->score < 70) {
     		throw new LowScore($this->getName(), $this->score);

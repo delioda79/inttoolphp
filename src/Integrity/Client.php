@@ -2,11 +2,6 @@
 
 namespace Integrity;
 
-use Integrity\Calculator\AllStar;
-use Integrity\Calculator\Burst;
-use Integrity\Calculator\LongToSay;
-use Integrity\Calculator\SameDevice;
-use Integrity\Calculator\Solicited;
 use Integrity\Exception\InvalidAdvisor;
 use Integrity\Exception\LowScore;
 use Integrity\Exception\ExtraLowScore;
@@ -15,19 +10,12 @@ use Integrity\Exception\InvalidData;
 class Client
 {
 	private $advisors = [];
+	private $stream;
 	
-	function __construct()
+	function __construct($advisors, $calculators, StreamInterface $stream)
 	{
-		$this->advisors[] = new Advisor('John');
-		$this->advisors[] = new Advisor('Mark');
-		$this->advisors[] = new Advisor('Ethan');
-		
-		$calculators = [];
-		$calculators[] = new AllStar();
-		$calculators[] = new Burst();
-		$calculators[] = new LongToSay();
-		$calculators[] = new SameDevice();
-		$calculators[] = new Solicited();
+		$this->advisors = $advisors;
+		$this->stream = $stream;
 		
 		foreach($this->advisors as $advisor)
 		{
@@ -40,41 +28,41 @@ class Client
 	
 	public function run()
 	{
-		echo "\nThis is an integrity tool. In this context we have\n 3 advisors".
-		"whose names are: John, Mark, Ethan. You can send review informations\n".
+		$welcome = "\nThis is an integrity tool. In this context we have\n 3 advisors".
+		"whose names are: " .implode(', ', $this->getAdvisorNames()) .". You can send review informations\n".
 		"in the format 12th July 12:04, Jon, solicited, LB3‐TYU, 50 words, *****\n".
 		"Where the year is supposed the current one, solicited is one of the two types:".
 		"solicited and unsolicited, LB3‐TYU is a case-sensitive string representing a ".
 		"device type.\n";
 		
+		$this->stream->sendData($welcome);
+		
 		$exit = false;
 		while(!$exit) {
-			$line = trim(fgets(STDIN));
+			$line = trim($this->stream->readData());
 			if(strtolower($line) == 'quit') {
 				$exit = true;
 			} else {
 				try {
-					$data = split(',', $line);
+					$data = explode(',', $line);
 					
-					if (count($data) < 6) {
-						throw new InvalidData();
-					}
+					$this->validateData($data);
 					
-					$advisor = $this->getAdvisor($data[1]);
-					$advisor->addReview(new Review($data[0], $data[2], $data[3], (int) $data[4], strlen($data[5])));
-					echo $advisor->getScore();
+					$advisor = $this->getAdvisor(trim($data[1]));
+					$advisor->addReview(new Review(strtotime(trim($data[0])), trim($data[2]), trim($data[3]), (int) trim($data[4]), strlen(trim($data[5]))));
+					$this->stream->sendData($advisor->getScore());
 				} catch(InvalidAdvisor $e) {
-					echo $e->getMessage();
+					$this->stream->sendData($e->getMessage());
 				} catch (LowScore $e) {
-					echo $e->getMessage();
+					$this->stream->sendData($e->getMessage());
 				} catch (ExtraLowScore $e) {
-					echo $e->getMessage();
+					$this->stream->sendData($e->getMessage());
 				} catch(\Exception $e) {
-					echo $e->getMessage();
+					$this->stream->sendData($e->getMessage());
 				}
 				
 			}
-			echo "\n";
+			$this->stream->sendData("\n");
 		}
 	}
 	
@@ -87,5 +75,34 @@ class Client
 			}
 			throw new InvalidAdvisor($name);
 		}
+	}
+	
+	private function validateData($data)
+	{
+		//We need 6 params
+		if (count($data) < 6) {
+			throw new InvalidData();
+		}
+		//last argument must be a set of stars
+		if (str_replace('*', '', $data[5]) !== '') {
+			throw new InvalidData();
+		}
+		
+		try{
+			$date = new \DateTime($data[0]);
+		} catch(\Exception $e) {
+			throw new InvalidData();
+		}
+	}
+	
+	private function getAdvisorNames()
+	{
+		$names = [];
+		foreach ($this->advisors as $advisor)
+		{
+			$names[] = $advisor->getName();
+		}
+		
+		return $names;
 	}
 }

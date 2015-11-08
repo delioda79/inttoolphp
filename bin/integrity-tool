@@ -7,5 +7,30 @@ function my_autoloader($class) {
 
 spl_autoload_register('my_autoloader');
 
-$client = new Integrity\Client();
+$advisors = [];
+$advisors[] = new Integrity\Advisor('John');
+$advisors[] = new Integrity\Advisor('Mark');
+$advisors[] = new Integrity\Advisor('Ethan');
+
+$calculators = [];
+$calculators[] = new Integrity\Calculator\AllStar();
+$calculators[] = new Integrity\Calculator\Burst();
+$calculators[] = new Integrity\Calculator\LongToSay();
+$calculators[] = new Integrity\Calculator\SameDevice();
+$calculators[] = new Integrity\Calculator\Solicited();
+
+class Stream implements Integrity\StreamInterface
+{
+	public function readData()
+	{
+		return fgets(STDIN);
+	}
+	
+	public function sendData($data)
+	{
+		echo $data;
+	}
+}
+
+$client = new Integrity\Client($advisors, $calculators, new Stream());
 $client->run();
