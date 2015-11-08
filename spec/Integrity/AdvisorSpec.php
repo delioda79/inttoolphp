@@ -81,6 +81,24 @@ class AdvisorSpec extends ObjectBehavior
     	$this->getScore()->shouldReturn(97);
     }
     
+    function it_should_return_score_less_or_equal_to_hundred($calculator1, $calculator2, $review)
+    {
+    	$review->beADoubleOf('Integrity\Review');
+    	$review->beConstructedWith([strtotime('now'), 'solicited', 'LB3‐TYU', 50, 5]);
+    
+    	$calculator1->beADoubleOf('Integrity\CalculatorInterface');
+    	$calculator1->getModifier($review, [])->willReturn(+1);
+    	$this->addCalculator($calculator1);
+    
+    	$calculator2->beADoubleOf('Integrity\CalculatorInterface');
+    	$calculator2->getModifier($review, [])->willReturn(+3);
+    	$this->addCalculator($calculator2);
+    
+    	$this->addReview($review);
+    
+    	$this->getScore()->shouldReturn(100);
+    }
+    
     function it_should_return_advisor_name()
     {
     	$this->getName()->shouldReturn('John');

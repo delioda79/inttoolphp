@@ -2,12 +2,16 @@
 
 namespace Integrity;
 
+use Integrity\Exception\LowScore;
+use Integrity\Exception\ExtraLowScore;
 class Advisor
 {
+	const MAX_SCORE = 100;
+	
 	protected $reviews = [];
 	protected $name;
 	protected $calculators = [];
-	protected $score = 100;
+	protected $score = Advisor::MAX_SCORE;
 
     public function __construct($name)
     {
@@ -42,7 +46,13 @@ class Advisor
     	foreach($this->calculators as $calculator) {
     		$score += $calculator->getModifier($review, $this->reviews);
     	}
-    	$this->score = $score;
+    	$this->score = $score < $this::MAX_SCORE ? $score : $this::MAX_SCORE;
+    	
+    	if ($this->score < 50) {
+    		throw new ExtraLowScore($this->getName());
+    	} else if ($this->score < 70) {
+    		throw new LowScore($this->getName(), $this->score);
+    	}
     }
     
     private function enforceTime(Review $review)

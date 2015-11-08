@@ -7,6 +7,10 @@ use Integrity\Calculator\Burst;
 use Integrity\Calculator\LongToSay;
 use Integrity\Calculator\SameDevice;
 use Integrity\Calculator\Solicited;
+use Integrity\Exception\InvalidAdvisor;
+use Integrity\Exception\LowScore;
+use Integrity\Exception\ExtraLowScore;
+use Integrity\Exception\InvalidData;
 
 class Client
 {
@@ -51,14 +55,26 @@ class Client
 			} else {
 				try {
 					$data = split(',', $line);
+					
+					if (count($data) < 6) {
+						throw new InvalidData();
+					}
+					
 					$advisor = $this->getAdvisor($data[1]);
-					$advisor->addReview(new Review($data[0], $data[2], $data[3], $data[4], strlen($data[5])));
+					$advisor->addReview(new Review($data[0], $data[2], $data[3], (int) $data[4], strlen($data[5])));
 					echo $advisor->getScore();
+				} catch(InvalidAdvisor $e) {
+					echo $e->getMessage();
+				} catch (LowScore $e) {
+					echo $e->getMessage();
+				} catch (ExtraLowScore $e) {
+					echo $e->getMessage();
 				} catch(\Exception $e) {
 					echo $e->getMessage();
 				}
 				
 			}
+			echo "\n";
 		}
 	}
 	
@@ -69,7 +85,7 @@ class Client
 			if ($advisor->getName() == $name) {
 				return $advisor;
 			}
-			throw new \Exception("Advisor $name does not exist");
+			throw new InvalidAdvisor($name);
 		}
 	}
 }
