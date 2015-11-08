@@ -30,9 +30,11 @@ class ClientSpec extends ObjectBehavior
 		$advisor1->addCalculator($calculator2)->willReturn();
 		$advisor1->addReview(Argument::any())->willReturn(100);
 		$advisor1->getScore(Argument::any())->willReturn(100);
+		$advisor1->getStatus()->willReturn(2);
 		
 		$advisor2->addCalculator($calculator1)->willReturn();
 		$advisor2->addCalculator($calculator2)->willReturn();
+		$advisor2->getStatus()->willReturn(2);
 		
 		$advisor1->getName()->willReturn('Advisor1');
 		$advisor2->getName()->willReturn('Advisor2');
@@ -64,21 +66,21 @@ class ClientSpec extends ObjectBehavior
     	$this->stream->sendData(100)->shouldHaveBeenCalled();
     }
     
-    function it_should_throw_exceptions_on_wrong_date()
+    function it_should_alert_on_wrong_date()
     {
     	$this->stream->readData()->willReturn('wrongDate, Advisor1,solicited, DEV1,50,**');
     	$this->run();
     	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
     }
     
-    function it_should_throw_exceptions_on_wrong_stars()
+    function it_should_alert_on_wrong_stars()
     {
     	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50,a');
     	$this->run();
     	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
     }
     
-    function it_should_throw_exceptions_on_wrong_type()
+    function it_should_alert_on_wrong_type()
     {    
     	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,soliciteda, DEV1,50,***');
     	$this->run();
@@ -93,17 +95,25 @@ class ClientSpec extends ObjectBehavior
     	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
     }
     
-    function it_should_throw_exceptions_on_wrong_arguments_number()
+    function it_should_alert_on_wrong_arguments_number()
     {
     	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50');
     	$this->run();
     	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
     }
     
-    function it_should_throw_exceptions_on_wrong_advisor()
+    function it_should_alert_on_wrong_advisor()
     {
 		$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor3,solicited, DEV1,50,**');
     	$this->run();
     	$this->stream->sendData("Advisor Advisor3 does not exist")->shouldHaveBeenCalled();
+    }
+    
+    function it_should_alert_on_deactivated_advisor()
+    {
+    	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50,**');
+    	$this->advisor1->getStatus()->willReturn(0);
+    	$this->run();
+    	$this->stream->sendData("Advisor Advisor1 does not exist")->shouldHaveBeenCalled();
     }
 }

@@ -55,7 +55,7 @@ class AdvisorSpec extends ObjectBehavior
     	$review2->beADoubleOf('Integrity\Review');
     	$review2->beConstructedWith([$oneHrAgo, 'solicited', 'LB3‐TYU', 50, 5]);
     	$review2->getDate()->willReturn($oneHrAgo);
-    	$this->shouldThrow('\Exception')->duringAddReview($review2);
+    	$this->shouldThrow('Integrity\Exception\PastDateReview')->duringAddReview($review2);
     }
 
     function it_should_return_default_score()
@@ -97,6 +97,30 @@ class AdvisorSpec extends ObjectBehavior
     	$this->addReview($review);
     
     	$this->getScore()->shouldReturn(100);
+    }
+    
+    function it_should_throw_deactivation_exception($calculator1, $review)
+    {
+    	$review->beADoubleOf('Integrity\Review');
+    	$review->beConstructedWith([strtotime('now'), 'solicited', 'LB3‐TYU', 50, 5]);
+    
+    	$calculator1->beADoubleOf('Integrity\CalculatorInterface');
+    	$calculator1->getModifier($review, [])->willReturn(-51);
+    	$this->addCalculator($calculator1);
+    
+    	$this->shouldThrow('Integrity\Exception\ExtraLowScore')->duringAddReview($review);
+    }
+    
+    function it_should_throw_warning_exception($calculator1, $review)
+    {
+    	$review->beADoubleOf('Integrity\Review');
+    	$review->beConstructedWith([strtotime('now'), 'solicited', 'LB3‐TYU', 50, 5]);
+    
+    	$calculator1->beADoubleOf('Integrity\CalculatorInterface');
+    	$calculator1->getModifier($review, [])->willReturn(-31);
+    	$this->addCalculator($calculator1);
+    
+    	$this->shouldThrow('Integrity\Exception\LowScore')->duringAddReview($review);
     }
     
     function it_should_return_advisor_name()

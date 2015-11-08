@@ -7,6 +7,18 @@ use Integrity\Exception\LowScore;
 use Integrity\Exception\ExtraLowScore;
 use Integrity\Exception\InvalidData;
 
+/**
+ * This class implements a client for a stateful application
+ * for calculating integrity score. It makes use of a list of
+ * Advisors (instances of Advicor class), Calculators
+ * (implementing CalculatorInterface) and of a stream.
+ * The stream Interface provides a way to communicate
+ * through a simple api and is useful when creating
+ * a command line tool needing to communicate with this client.
+ * It is also adds an easy way to tests the client.
+ * @author delio
+ * 
+ */
 class Client
 {
 	private $advisors = [];
@@ -70,13 +82,29 @@ class Client
 	{
 		foreach($this->advisors as $advisor)
 		{
-			if ($advisor->getName() == $name) {
+			if ($advisor->getName() == $name && $advisor->getStatus() > Advisor::STATUS_INACTIVE) {
 				return $advisor;
 			}
 		}
 		throw new InvalidAdvisor($name);
 	}
 	
+	/**
+	 * This function validates the input
+	 * that will be sent to the advisor.
+	 * The run method will have to modify
+	 * the user inputs so that the format
+	 * is suitable for being sent to
+	 * Advisor::addReview. The data the
+	 * user inputs are slightly different
+	 * in format from what Advisor expects,
+	 * this functions validates the input
+	 * so that is then possible to transform it
+	 * and send it to Advisor
+	 * 
+	 * @param array $data
+	 * @throws InvalidData
+	 */
 	private function validateData($data)
 	{
 		//We need 6 params
@@ -95,6 +123,10 @@ class Client
 		}
 	}
 	
+	/**
+	 * Utility function that retrieves a list
+	 * with the names of the available Advisors
+	 */
 	private function getAdvisorNames()
 	{
 		$names = [];
