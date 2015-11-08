@@ -73,8 +73,8 @@ class Client
 			if ($advisor->getName() == $name) {
 				return $advisor;
 			}
-			throw new InvalidAdvisor($name);
 		}
+		throw new InvalidAdvisor($name);
 	}
 	
 	private function validateData($data)

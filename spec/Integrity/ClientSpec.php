@@ -34,6 +34,14 @@ class ClientSpec extends ObjectBehavior
 		$advisor2->addCalculator($calculator1)->willReturn();
 		$advisor2->addCalculator($calculator2)->willReturn();
 		
+		$advisor1->getName()->willReturn('Advisor1');
+		$advisor2->getName()->willReturn('Advisor2');
+		$stream->sendData(Argument::type('string'))->willReturn("Start");
+		$stream->sendData(Argument::type('int'))->willReturn(100);
+		
+		$stream->sendData("\n")->will(function($stream) {
+			$this->readData()->willReturn('quit');
+		});
 		
 		$this->advisor1 = $advisor1;
 		$this->advisor2 = $advisor2;
@@ -41,36 +49,61 @@ class ClientSpec extends ObjectBehavior
 		$this->calculator2 = $calculator2;
 		$this->stream = $stream;
 	}
+	
     function it_is_initializable()
     {
     	$this->shouldHaveType('Integrity\Client');
     }
-    
+
     function it_returns_correct_score()
     {
-    	$this->advisor1->getName()->willReturn('Advisor1');
-    	$this->advisor2->getName()->willReturn('Advisor2');
-    	$this->stream->sendData(Argument::type('string'))->willReturn("Start");
-    	$this->stream->sendData(Argument::type('int'))->willReturn(100);
+    	
     	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50,**');
-    	$this->stream->sendData("\n")->will(function($stream) {
-    		$this->readData()->willReturn('quit');
-    	});
+    	
     	$this->run();
     	$this->stream->sendData(100)->shouldHaveBeenCalled();
     }
     
-    function it_should_throw_exceptions_on_wrong_data()
+    function it_should_throw_exceptions_on_wrong_date()
     {
-    	$this->advisor1->getName()->willReturn('Advisor1');
-    	$this->advisor2->getName()->willReturn('Advisor2');
-    	$this->stream->sendData(Argument::type('string'))->willReturn("Start");
-    	$this->stream->sendData(Argument::type('int'))->willReturn(100);
     	$this->stream->readData()->willReturn('wrongDate, Advisor1,solicited, DEV1,50,**');
-    	$this->stream->sendData("\n")->will(function($stream) {
-    		$this->readData()->willReturn('quit');
-    	});
     	$this->run();
     	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
+    }
+    
+    function it_should_throw_exceptions_on_wrong_stars()
+    {
+    	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50,a');
+    	$this->run();
+    	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
+    }
+    
+    function it_should_throw_exceptions_on_wrong_type()
+    {    
+    	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,soliciteda, DEV1,50,***');
+    	$this->run();
+    	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
+    
+    	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50');
+    	$this->run();
+    	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
+    
+    	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50,**');
+    	$this->run();
+    	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
+    }
+    
+    function it_should_throw_exceptions_on_wrong_arguments_number()
+    {
+    	$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor1,solicited, DEV1,50');
+    	$this->run();
+    	$this->stream->sendData("Could not read review summary data")->shouldHaveBeenCalled();
+    }
+    
+    function it_should_throw_exceptions_on_wrong_advisor()
+    {
+		$this->stream->readData()->willReturn('2018-01-01 11:30, Advisor3,solicited, DEV1,50,**');
+    	$this->run();
+    	$this->stream->sendData("Advisor Advisor3 does not exist")->shouldHaveBeenCalled();
     }
 }
