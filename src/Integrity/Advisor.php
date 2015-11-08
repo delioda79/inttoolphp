@@ -21,22 +21,9 @@ class Advisor
 
     public function addReview(Review $review)
     {
+    	$this->enforceTime($review);
+    	$this->calculateScore($review);
         $this->reviews[] = $review;
-        /**
-         * We are modifying the original array,
-         * cause of a PHP bug in versions >= 5.2
-         * usort will throw an error when using
-         * debugging functions like in phpspecs.
-         */
-        @usort($this->reviews, function($a, $b) {
-        	if ($a->getDate() == $b->getDate()) {
-        		return 0;
-        	} else {
-        		return ($a->getDate() < $b->getDate()) ? -1 : 1;
-        	}
-        });
-
-        $this->calculateScore();
     }
     
     public function getScore()
@@ -44,17 +31,34 @@ class Advisor
     	return $this->score;
     }
 
-    public function addCalculator(Calculator $calculator)
+    public function addCalculator(CalculatorInterface $calculator)
     {
         $this->calculators[] = $calculator;
     }
     
-    private function calculateScore()
+    private function calculateScore($review)
     {
     	$score = $this->score;
     	foreach($this->calculators as $calculator) {
-    		$score += $calculator->getModifier($this->reviews);
+    		$score += $calculator->getModifier($review, $this->reviews);
     	}
     	$this->score = $score;
+    }
+    
+    private function enforceTime(Review $review)
+    {
+    	$reviewsCount = count($this->reviews);
+    	if ( $reviewsCount > 0) {
+    		$lastDate = $this->reviews[$reviewsCount-1]->getDate();
+
+    		if ($lastDate > $review->getDate()) {
+    			throw new \Exception("Review can't be older than any of the existing ones");
+    		}    	
+    	}
+    }
+
+    public function getName()
+    {
+        return $this->name;
     }
 }

@@ -11,7 +11,7 @@ class AdvisorSpec extends ObjectBehavior
 	{
 		$this->beConstructedWith('John');
 	}
-	
+
     function it_is_initializable()
     {
         $this->shouldHaveType('Integrity\Advisor');
@@ -30,39 +30,59 @@ class AdvisorSpec extends ObjectBehavior
     	$this->getReviews()->shouldReturn([$review]);
     }
     
-    function it_orders_reviews_after_adding_a_new_one($review, $review2)
+    function it_adds_reviews_with_increasing_time($review1, $review2)
     {
-    	$review->beADoubleOf('Integrity\Review');
-    	$review->beConstructedWith([strtotime('now'), 'solicited', 'LB3‐TYU', 50, 5]);
-    	$this->addReview($review);
+    	$review1->beADoubleOf('Integrity\Review');
+    	$review1->beConstructedWith([strtotime('-1 hour'), 'solicited', 'LB3‐TYU', 50, 5]);
+    	$this->addReview($review1);
     	
     	$review2->beADoubleOf('Integrity\Review');
-    	$review2->beConstructedWith([strtotime('-1 hour'), 'solicited', 'LB3‐TYU', 50, 5]);
+    	$review2->beConstructedWith([strtotime('now'), 'solicited', 'LB3‐TYU', 50, 5]);
     	$this->addReview($review2);
     	
-    	$this->getReviews()->shouldReturn([$review2, $review]);
+    	$this->getReviews()->shouldReturn([$review1, $review2]);
     }
     
+    function it_should_prevent_insertion_of_older_review($review1, $review2)
+    {
+    	$now = strtotime('now');
+    	$review1->beADoubleOf('Integrity\Review');
+    	$review1->beConstructedWith([$now, 'solicited', 'LB3‐TYU', 50, 5]);
+    	$review1->getDate()->willReturn($now);
+    	$this->addReview($review1);
+
+    	$oneHrAgo = strtotime('-1 hour');
+    	$review2->beADoubleOf('Integrity\Review');
+    	$review2->beConstructedWith([$oneHrAgo, 'solicited', 'LB3‐TYU', 50, 5]);
+    	$review2->getDate()->willReturn($oneHrAgo);
+    	$this->shouldThrow('\Exception')->duringAddReview($review2);
+    }
+
     function it_should_return_default_score()
     {
     	$this->getScore()->shouldReturn(100);
     }
     
-    function it_should_set_calculators($calculator1, $calculator2, $review)
+    function it_should_set_calculators_and_return_correct_score($calculator1, $calculator2, $review)
     {
     	$review->beADoubleOf('Integrity\Review');
     	$review->beConstructedWith([strtotime('now'), 'solicited', 'LB3‐TYU', 50, 5]);
     	 
-    	$calculator1->beADoubleOf('Integrity\Calculator');
-    	$calculator1->getModifier([$review])->willReturn(-1);
+    	$calculator1->beADoubleOf('Integrity\CalculatorInterface');
+    	$calculator1->getModifier($review, [])->willReturn(-1);
     	$this->addCalculator($calculator1);
 
-    	$calculator2->beADoubleOf('Integrity\Calculator');
-    	$calculator2->getModifier([$review])->willReturn(-2);
+    	$calculator2->beADoubleOf('Integrity\CalculatorInterface');
+    	$calculator2->getModifier($review, [])->willReturn(-2);
     	$this->addCalculator($calculator2);
-    
+ 
     	$this->addReview($review);
 
     	$this->getScore()->shouldReturn(97);
+    }
+    
+    function it_should_return_advisor_name()
+    {
+    	$this->getName()->shouldReturn('John');
     }
 }
