@@ -45,7 +45,7 @@ class Client
 		"in the format 12th July 12:04, Jon, solicited, LB3‐TYU, 50 words, *****\n".
 		"Where the year is supposed the current one, solicited is one of the two types:".
 		"solicited and unsolicited, LB3‐TYU is a case-sensitive string representing a ".
-		"device type.\n";
+		"device type. To exit the tool just type 'quit' without quotes and press enter, or just ctrl=c\n";
 		
 		$this->stream->sendData($welcome);
 		
