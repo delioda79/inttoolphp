@@ -5,9 +5,16 @@ The project contains a:
 
 "spec" folder with tests
 
-"vendor" folder with phpspec and its dependencies (provided here at the moment but you should just use composer to perform installation)
+"vendor" folder with phpspec and its dependencies
 
 "bin" folder with phpspec and integrity-tool
+
+The tool is ready to run, however in order to run the tests it is needed to
+install phpspec, this can be achieved from the project main folder typing:
+
+php composer.phar install
+
+This will install phpspec and its dependencies. The phpspec tool will be available in the bin folder after the installation.
 
 In order to run the tests, after the dependencies are installed, run
 path/to/phpspec run
